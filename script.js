@@ -1,7 +1,6 @@
 const body = document.body;
 const url = window.location.toString();
-const date = new Date();
-let requestFromPromise, dateFromPromise;
+let requestFromPromise;
 
 document.body.onload = function() {
 
@@ -11,7 +10,7 @@ document.body.onload = function() {
     if (!preloader.classList.contains('done')) {
     	preloader.classList.add('done');
     }
-  }, 3000)
+  }, 2000)
 
 };
 
@@ -25,22 +24,24 @@ const getUsernameFromUrl = (url) => {
 };
 
 const getDate = new Promise((resolve, reject) =>
-  setTimeout(() => date ? resolve(date) : reject('Время неизвестно'), 2000)
+  setTimeout(() => new Date ? resolve(new Date) : reject(new Error('Время неизвестно')), 2000)
 );
 
 const getRequest = fetch(`https://api.github.com/users/${getUsernameFromUrl(url)}`);
 
 Promise.all([getRequest, getDate])
-  .then(([request, date]) => {
+  .then(([request, nowDate]) => {
     requestFromPromise = request;
-    dateFromPromise = date;
-    savedDate = date;
+    date = nowDate;
   })
   .then(res => requestFromPromise.json())
-  .then(user => {
-    avatarOfUser = user.avatar_url;
-    bioOfUser = user.bio;
-    urlOfUser = user.url;
+  .then(json => {
+    avatarOfUser = json.avatar_url;
+    bioOfUser = json.bio;
+    urlOfUser = json.url;
+    const login = json.name;
+    const link = json.html_url;
+
     const addUser = () => {
       const user = document.createElement('h1');
       user.innerHTML = `${getUsernameFromUrl(url)}`;
@@ -58,21 +59,19 @@ Promise.all([getRequest, getDate])
       body.appendChild(img);
       body.appendChild(newString);
     }
-    let createUrl = () => {
-  	let userUrl = document.createElement('a');
-  	let text = document.createTextNode('PROFILE');
-  	userUrl.appendChild(text);
-  	userUrl.href = 'https://github.com/' + name;
-  	body.appendChild(userUrl);
-	}
-	const addDate = () => {
-		let currentDate = document.createElement('h4');
-	  currentDate.innerHTML = savedDate;
-	  body.appendChild(currentDate);
-	}
+
+    const userName = document.createElement('a'); 
+      userName.innerHTML = login; 
+      userName.setAttribute('href', link);
+      body.appendChild(userName);
+
+    const dateAdd = document.createElement('p');
+      dateAdd.innerHTML = date;
+      body.appendChild(dateAdd); 
+
     addUser();
     addBio();
     addImg();
-    createUrl();
-    addDate();
-});
+})
+
+.catch(err => console.log(err + 'Информация о пользователе не доступна'));
